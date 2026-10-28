@@ -1,0 +1,30 @@
+name: Build Windows EXE
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Build executable
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name AndroidSecurityLab --add-data "data;data" --add-data "samples;samples" --add-data "rules;rules" main.py
+          if (!(Test-Path dist/AndroidSecurityLab.exe)) { throw "EXE missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AndroidSecurityLab-Windows
+          path: dist/AndroidSecurityLab.exe
+          if-no-files-found: error
